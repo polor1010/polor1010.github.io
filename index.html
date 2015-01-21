@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+  	<head>
+  		<meta charset="utf-8">
+    	<title>High Way Pridect</title>
+    	<link href="./css/bootstrap.min.css" rel="stylesheet">
+      <link href="./css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+	</head>
+ 
+<style>
+p.two {
+    border-style: solid;
+    border-color: #ff0000 #000000 #0000ff;
+}
+
+.states {
+    fill: #aaa;
+    stroke: #ff0000;
+    stroke-width: 3px;
+    p.border-style: solid; 
+}
+
+.bar {
+  fill: steelblue;
+}
+
+.bar:hover {
+  fill: brown;
+}
+
+.axis {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+</style>
+
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script type="text/javascript" src="./jquery/jquery-1.8.3.min.js" charset="UTF-8"></script>
+<script type="text/javascript" src="./jquery/jquery.cookie.js" charset="UTF-8"></script>
+
+<script type="text/javascript" src="./bootstrap/bootstrap.min.js"></script>
+<script type="text/javascript" src="./bootstrap/bootstrap-datetimepicker.js" charset="UTF-8"></script>
+<script type="text/javascript" src="./locales/bootstrap-datetimepicker.fr.js" charset="UTF-8"></script>  
+<div id = 'twitterFeed'></div>
+	
+<table border=0>
+  <tr>
+    <td>
+      <br>
+            <div id="datetimepicker" class="form-group">
+                <div class="input-group date form_datetime col-md-10" data-date="1979-09-16T05:25:07Z" data-date-format="dd MM yyyy - HH:ii p" data-link-field="dtp_input1" align="right">
+                    <input class="form-control" size="26" type="text" value="" readonly>
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+                </div>
+            </div>
+      <svg id="map"></svg></td>
+    <td valign = "top">
+      <br>
+      <svg id="chart1"></svg>
+      <svg id="chart2"></svg>
+      <svg id="chart3"></svg>
+      <svg id="chart4"></svg>
+      <svg id="chart5"></svg>
+      <svg id="chart6"></svg>
+    </td>
+  </tr>
+</table>
+
+<p class="two"></p>
+
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+     <linearGradient id = "g1" x1 = "50%" y1 = "50%" x2 = "60%" y2 = "60%">
+            <stop stop-color = "green" offset = "0%"/>
+            <stop stop-color = "pink" offset = "100%"/>
+        </linearGradient>
+      </defs>
+    <use x = "10" y = "10" xlink:href = "#s1" fill = "url(#g1)"/>
+   </svg>
+
+   {{.JsonDatas}}
+
+</body>
+
+<script>
+ 
+function padLeft(str, len) {
+    str = '' + str;
+    if (str.length >= len) {
+        return str;
+    } else {
+        return padLeft("0" + str, len);
+    }
+}
+
+function sortJsonArrayByProperty(objArray, prop, direction){
+    if (arguments.length<2) throw new Error("sortJsonArrayByProp requires 2 arguments");
+    var direct = arguments.length>2 ? arguments[2] : 1; //Default to ascending
+
+    if (objArray && objArray.constructor===Array){
+        var propPath = (prop.constructor===Array) ? prop : prop.split(".");
+        objArray.sort(function(a,b){
+            for (var p in propPath){
+                if (a[propPath[p]] && b[propPath[p]]){
+                    a = a[propPath[p]];
+                    b = b[propPath[p]];
+                }
+            }
+            // convert numeric strings to integers
+            //a = a.match(/^\d+$/) ? +a : a;
+            //b = b.match(/^\d+$/) ? +b : b;
+            return ( (a < b) ? -1*direct : ((a > b) ? 1*direct : 0) );
+        });
+    }
+}
+
+
+
+var width = 500, height = 650;
+var projection = d3.geo.mercator().center([122.479531, 23.998567]).scale(9000);
+var path = d3.geo.path().projection(projection);
+
+var svg = d3.select("svg#map").attr("width", width).attr("height", height);
+
+var data1;
+var data2;
+
+jQuery.postJSON = function(url, args, callback) {
+  console.log("jQuery.postJSON");
+   var xsrf, xsrflist;
+   xsrf = $.cookie("_xsrf");
+   console.log(xsrf)
+   xsrflist = xsrf.split("|");
+   args._xsrf = base64_decode(xsrflist[0]);
+    $.ajax({url: url, data: $.param(args), dataType: "text", type: "POST",
+        success: function(response) {
+        callback(eval("(" + response + ")"));
+    }});
+};
+
+
+
+d3.json("./static/twCounty2010.topo.json", function (error, data) {
+
+  data1 = data
+  svg.append("g").selectAll("path")
+    .data(topojson.feature(data, data.objects.layer1).features)
+    .enter()
+    .append("path")
+    .attr("d", path)
+    .attr("stroke", "black")
+    .attr("fill", "#ddc");
+ 
+  d3.json("./static/geo.json", function(error, data) {  
+       
+  svg.append("g").selectAll("path")
+    .data( data.geometries)
+    .enter()
+    .append("path")
+    .attr("d", path)
+    .attr("class", "states");
+    //.attr("stroke", "red")
+    //.attr("stroke-width","3");
+
+  });
+
+});
+
+
+
+
+var d = new Date();
+var dateStr = 
+    padLeft(d.getFullYear(),4) +  
+    padLeft(d.getMonth()+1,2) + 
+    padLeft(d.getDate(),2) +
+    padLeft(d.getHours(),2) +
+    padLeft(d.getMinutes(),2)
+    ;
+
+console.log(dateStr);
+//dateStr = '201501141110';
+
+var url_all = 'http://54.64.202.129:8888/all/'+dateStr;
+
+//jQuery.postJSON('http://54.64.202.129:8888/','all');
+d3.json(url_all, function(error, data){
+    console.log(url_all);
+    jsonData = data;//JSON.parse(data);
+    console.log(jsonData);
+
+    //var results;
+    sortJsonArrayByProperty(jsonData, 'Speed1');
+
+    var i;
+    for( i = 1 ; i <= 6 ; i++ )
+    {
+       str = dateStr + '/' + jsonData[i].LocationID;
+       console.log(url_day+str)
+       drawChart(url_day+str,"svg#chart"+i);
+    }
+  }
+);
+
+var url_day = 'http://54.64.202.129:8888/day/';
+
+//drawChart(url_day+'201501021400/0025',"svg#chart2");
+//drawChart({{.JsonDatas}},"svg#chart2");
+//drawChart({{.JsonDatas}},"svg#chart3");
+//drawChart({{.JsonDatas}},"svg#chart4");
+//drawChart({{.JsonDatas}},"svg#chart5");
+//drawChart({{.JsonDatas}},"svg#chart6");
+//drawChart("./static/data.tsv","svg#chart6");
+
+function drawChart(url,chartID){
+
+d3.json(url, function(error, data) {
+  	//var data = d3.tsv.parse(filePath);
+    json = data;//JSON.parse(data);
+    var format = d3.time.format("%H:%M")
+    var timeFn = function(d) { return format.parse(d.Time) }
+    
+    width = 360;
+    height = 160;
+    var margin = {top: 30, right: 20, bottom: 30, left: 35};
+    
+    var x = d3.time.scale()
+        .domain(d3.extent(json.Data,timeFn))  // values between for month of january
+        .range([20, width - 20 * 2]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .tickFormat(d3.time.format("%H:%M"))
+        ;
+
+    var x2 = d3.time.scale()
+        .domain(d3.extent(json.Data,timeFn))  // values between for month of january
+        .range([20, width - 20 * 2]);
+
+    var xAxis2 = d3.svg.axis()
+        .scale(x2)
+        .orient("bottom")
+        .tickFormat(d3.time.format("%H:%M"))
+        ;
+
+    var y = d3.scale.linear()
+        .domain([0,200])
+        .range([height, 0]);
+
+    var yAxis = d3.svg.axis()
+        .scale(y)//.range([10, 350]);
+        .orient("left");
+
+    var svg = d3.select(chartID)
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+          .append("text")
+          .attr("y",10)
+          .attr("x",width-35)
+          .text("(時間)")
+          ;
+
+      svg.append("g")
+          .attr("class", "LocationName")
+          .append("text")
+          .attr("y",-7)
+          .attr("x",width-json.Name.length*12)
+          .text(json.Name)
+          ;
+      svg.append("g")
+          .attr("class", "Direction")
+          .append("text")
+          .attr("y",10)
+          .attr("x",width-60)
+          .text((json.Direction, function(d){
+            if( d == '1')
+              return "(南北向)";
+            else
+              return "(東西向)";
+          }))
+          ;
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("x",-30)
+          .attr("y",-15)
+          .text("(時速)")
+          ;
+
+      svg.selectAll(".bar")
+          .data(json.Data)
+          .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return x(format.parse(d.Time))-5; })
+          .attr("width", 10 ) 
+          .attr("y",  function(d) { return (y(d.Speed1)); } )       
+          .attr("height", function(d) { return  height - (y(d.Speed1)); } )
+          ;
+
+  }
+);
+
+//}
+
+}
+
+    $('.form_datetime').datetimepicker({
+        //language:  'fr',
+        weekStart: 1,
+        todayBtn:  1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        forceParse: 0,
+        showMeridian: 1
+    });
+</script> 
+</html>
