@@ -78,21 +78,6 @@ p.two {
     </td>
   </tr>
 </table>
-
-<p class="two"></p>
-
-<svg xmlns="http://www.w3.org/2000/svg">
-  <defs>
-     <linearGradient id = "g1" x1 = "50%" y1 = "50%" x2 = "60%" y2 = "60%">
-            <stop stop-color = "green" offset = "0%"/>
-            <stop stop-color = "pink" offset = "100%"/>
-        </linearGradient>
-      </defs>
-    <use x = "10" y = "10" xlink:href = "#s1" fill = "url(#g1)"/>
-   </svg>
-
-   {{.JsonDatas}}
-
 </body>
 
 <script>
@@ -164,7 +149,7 @@ d3.json("./twCounty2010.topo.json", function (error, data) {
     .attr("stroke", "black")
     .attr("fill", "#ddc");
  
-  d3.json("./static/geo.json", function(error, data) {  
+  d3.json("./geo.json", function(error, data) {  
        
   svg.append("g").selectAll("path")
     .data( data.geometries)
